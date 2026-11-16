@@ -41,7 +41,6 @@ export const teams: NotificationProvider = {
       {
         source: 'TFG Monitor',
         notification: {
-          id: notification.id,
           name: notification.name,
           type: notification.type,
         },
