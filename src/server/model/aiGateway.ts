@@ -31,8 +31,10 @@ export function buildOpenRouterHeaders(req: Request) {
   const title = req.get?.('X-Title') ?? req.headers['x-title'] ?? undefined;
 
   return {
-    'HTTP-Referer': referer ? String(referer) : 'https://tianji.dev/',
-    'X-Title': title ? String(title) : 'Tianji',
+    'HTTP-Referer': referer
+      ? String(referer)
+      : 'https://monitor.tinfundinggroup.net/',
+    'X-Title': title ? String(title) : 'TFG Monitor',
     ...buildAIGatewayForwardHeaders(req),
   };
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  LuBell,
   LuSquareActivity,
   LuChartArea,
   LuFileChartPie,
@@ -32,8 +33,15 @@ export const MobileLayout: React.FC<LayoutProps> = React.memo((props) => {
       <div className="flex h-[52px] items-center justify-between px-2">
         <MobileLayoutMenu list={props.list} />
 
-        <div className="rounded-md dark:bg-white/10">
-          <img className="m-auto h-8 w-8" src="/icon.svg" />
+        <div className="flex items-center gap-2 rounded-lg px-2 py-1 bg-amber-500/10 ring-1 ring-amber-500/20">
+          <img
+            className="h-6 w-6 drop-shadow-sm"
+            src="/icon.png"
+            alt="TFG Monitor"
+          />
+          <span className="text-xs font-bold tracking-tight text-foreground">
+            TFG Monitor
+          </span>
         </div>
 
         <div>
@@ -54,17 +62,25 @@ export const MobileLayout: React.FC<LayoutProps> = React.memo((props) => {
       <div className="p-2">
         <div className="flex justify-between">
           <MobileNavItem
-            title={t('Website')}
-            icon={LuChartArea}
-            to="/website"
-          />
-          <MobileNavItem
             title={t('Monitor')}
             icon={LuMonitorDot}
             to="/monitor"
           />
-          <MobileNavItem title={t('Servers')} icon={LuServer} to="/server" />
-          <MobileNavItem title={t('Pages')} icon={LuFileChartPie} to="/page" />
+          <MobileNavItem
+            title={t('Notifications')}
+            icon={LuBell}
+            to="/settings/notifications"
+          />
+          <MobileNavItem
+            title={t('Feed')}
+            icon={LuSquareActivity}
+            to="/feed"
+          />
+          <MobileNavItem
+            title={t('Website')}
+            icon={LuChartArea}
+            to="/website"
+          />
 
           <Drawer>
             <DrawerTrigger asChild>
@@ -76,36 +92,44 @@ export const MobileLayout: React.FC<LayoutProps> = React.memo((props) => {
             <DrawerContent>
               <div className="flex flex-row flex-wrap items-center justify-center gap-2 p-3">
                 <MobileNavItem
-                  title={t('Telemetry')}
-                  icon={LuWifi}
-                  to="/telemetry"
+                  title={t('Servers')}
+                  icon={LuServer}
+                  to="/server"
                   extraModal={true}
                 />
                 <MobileNavItem
-                  title={t('Survey')}
-                  icon={RiSurveyLine}
-                  to="/survey"
-                  extraModal={true}
-                />
-                <MobileNavItem
-                  title={t('Feed')}
-                  icon={LuSquareActivity}
-                  to="/feed"
-                  extraModal={true}
-                />
-                <MobileNavItem
-                  title={t('Short Link')}
-                  icon={LuLink}
-                  to="/shortlink"
+                  title={t('Pages')}
+                  icon={LuFileChartPie}
+                  to="/page"
                   extraModal={true}
                 />
                 {alphaMode && (
-                  <MobileNavItem
-                    title={t('Artifacts')}
-                    icon={LuPanelsTopLeft}
-                    to="/artifacts"
-                    extraModal={true}
-                  />
+                  <>
+                    <MobileNavItem
+                      title={t('Telemetry')}
+                      icon={LuWifi}
+                      to="/telemetry"
+                      extraModal={true}
+                    />
+                    <MobileNavItem
+                      title={t('Survey')}
+                      icon={RiSurveyLine}
+                      to="/survey"
+                      extraModal={true}
+                    />
+                    <MobileNavItem
+                      title={t('Short Link')}
+                      icon={LuLink}
+                      to="/shortlink"
+                      extraModal={true}
+                    />
+                    <MobileNavItem
+                      title="Artifacts"
+                      icon={LuPanelsTopLeft}
+                      to="/artifacts"
+                      extraModal={true}
+                    />
+                  </>
                 )}
               </div>
             </DrawerContent>

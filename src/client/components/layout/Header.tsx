@@ -6,7 +6,7 @@ import { Helmet } from 'react-helmet';
 export const LayoutHeader: React.FC = React.memo(() => {
   const { t } = useTranslation();
   const currentWorkspace = useCurrentWorkspaceSafe();
-  let title = 'Tianji - Insight into everything';
+  let title = 'TFG Monitor';
   if (currentWorkspace) {
     title = currentWorkspace.name + ' | ' + title;
 

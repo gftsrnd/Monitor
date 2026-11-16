@@ -96,12 +96,10 @@ export async function getClientInfo(
 }
 
 export function getIpAddress(req: IncomingMessage): string {
-  // Custom header
-  if (
-    process.env.CLIENT_IP_HEADER &&
-    req.headers[process.env.CLIENT_IP_HEADER]
-  ) {
-    return String(req.headers[process.env.CLIENT_IP_HEADER]);
+  // Custom header (case-insensitive lookup in lowercase req.headers)
+  const customHeader = process.env.CLIENT_IP_HEADER?.toLowerCase();
+  if (customHeader && req.headers[customHeader]) {
+    return String(req.headers[customHeader]);
   }
   // Cloudflare
   else if (req.headers['cf-connecting-ip']) {

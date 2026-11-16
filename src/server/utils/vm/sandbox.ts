@@ -202,6 +202,28 @@ export function buildSandbox(context: Context, globals: SandboxGlobals = {}) {
   jail.setSync(
     '_request',
     new ivm.Reference(async (config: AxiosRequestConfig) => {
+      const targetUri = axios.getUri(config);
+      const parsedUri = new URL(targetUri);
+      if (parsedUri.protocol !== 'http:' && parsedUri.protocol !== 'https:') {
+        throw new Error('Only http:// and https:// protocols are permitted');
+      }
+      const targetHost = parsedUri.hostname.toLowerCase();
+      const targetPort = Number(
+        parsedUri.port || (parsedUri.protocol === 'https:' ? 443 : 80)
+      );
+      if (
+        targetHost === '169.254.169.254' ||
+        targetHost.startsWith('169.254.') ||
+        targetHost === 'localhost' ||
+        targetHost === '127.0.0.1' ||
+        targetHost === '0.0.0.0' ||
+        targetHost === '::1' ||
+        targetHost.startsWith('127.') ||
+        [22, 5432, 6379].includes(targetPort)
+      ) {
+        throw new Error('SSRF protection: loopback, metadata, and internal DB/cache ports are blocked');
+      }
+
       let responseBytes: number | undefined;
       const result = await axios.request({
         ...config,

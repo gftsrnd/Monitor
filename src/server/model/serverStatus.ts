@@ -111,8 +111,16 @@ export async function recordServerStatus(
   // Get current server map from cache
   const serverMap = await getServerMapFromCache(workspaceId);
 
-  // Update current server status
+  // Cap maximum distinct server nodes per workspace to prevent Heap OOM flooding
   const serverKey = name || hostname;
+  if (!(serverKey in serverMap) && Object.keys(serverMap).length >= 50) {
+    logger.warn(
+      `[ServerStatus] Workspace ${workspaceId} reached max 50 server nodes; ignoring new node ${serverKey}`
+    );
+    return;
+  }
+
+  // Update current server status
   serverMap[serverKey] = {
     workspaceId,
     name,

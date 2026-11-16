@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import type { Monitor } from '../../../server/types/prisma';
 import { Button, Form, Input, InputNumber, Select, Switch } from 'antd';
 import { getMonitorProvider, monitorProviders } from './provider';
 import { useEventWithLoading } from '../../hooks/useEvent';
 import { NotificationPicker } from '../notification/NotificationPicker';
 import { useTranslation } from '@i18next-toolkit/react';
+import { trpc } from '@/api/trpc';
+import { useCurrentWorkspaceId } from '@/store/user';
 
 export type MonitorInfoEditorValues = Omit<
   Monitor,
@@ -23,7 +25,7 @@ const defaultValues: Omit<MonitorInfoEditorValues, 'payload'> = {
   type: monitorProviders[0].name,
   active: true,
   interval: 60,
-  maxRetries: 0,
+  maxRetries: 2,
   trendingMode: false,
   recentError: null,
   upMessageTemplate: '',
@@ -36,11 +38,37 @@ interface MonitorInfoEditorProps {
 }
 export const MonitorInfoEditor: React.FC<MonitorInfoEditorProps> = React.memo(
   (props) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const isVi = (i18n.language || 'vi-VN').startsWith('vi');
     const [form] = Form.useForm();
     const typeValue = Form.useWatch('type', form);
     const initialValues = props.initialValues ?? defaultValues;
     const isEdit = Boolean(initialValues.id);
+    const workspaceId = useCurrentWorkspaceId();
+    const autoBoundRef = useRef(false);
+
+    const { data: notifications = [] } = trpc.notification.all.useQuery(
+      { workspaceId: workspaceId! },
+      { enabled: Boolean(workspaceId && !isEdit) }
+    );
+
+    useEffect(() => {
+      if (
+        !isEdit &&
+        !autoBoundRef.current &&
+        notifications.length > 0 &&
+        !form.isFieldTouched('notificationIds')
+      ) {
+        const current = form.getFieldValue('notificationIds');
+        if (!Array.isArray(current) || current.length === 0) {
+          form.setFieldValue(
+            'notificationIds',
+            notifications.map((n) => n.id)
+          );
+          autoBoundRef.current = true;
+        }
+      }
+    }, [isEdit, notifications, form]);
 
     const provider = useMemo(() => {
       return getMonitorProvider(typeValue);
@@ -107,10 +135,14 @@ export const MonitorInfoEditor: React.FC<MonitorInfoEditorProps> = React.memo(
               'Maximum retries before the service is marked as down and a notification is sent'
             )}
           >
-            <InputNumber min={0} max={10} defaultValue={0} />
+            <InputNumber min={0} max={10} />
           </Form.Item>
 
           {formEl}
+
+          <Form.Item label={t('Notification')} name="notificationIds">
+            <NotificationPicker allowClear={true} mode="multiple" />
+          </Form.Item>
 
           <Form.Item
             label={t('Trending Mode')}
@@ -121,10 +153,6 @@ export const MonitorInfoEditor: React.FC<MonitorInfoEditorProps> = React.memo(
             <Switch />
           </Form.Item>
 
-          <Form.Item label={t('Notification')} name="notificationIds">
-            <NotificationPicker allowClear={true} mode="multiple" />
-          </Form.Item>
-
           <Form.Item
             label={t('Up Notification Template')}
             name="upMessageTemplate"
@@ -133,7 +161,11 @@ export const MonitorInfoEditor: React.FC<MonitorInfoEditorProps> = React.memo(
             )}
           >
             <Input.TextArea
-              placeholder="[{{monitorName}}] ✅ Up&#10;Time: {{currentTime}}"
+              placeholder={
+                isVi
+                  ? '[{{monitorName}}] ✅ Đã khôi phục (UP)\nMục tiêu: {{url}}\nThời gian: {{currentTime}}'
+                  : '[{{monitorName}}] ✅ Up\nTarget: {{url}}\nTime: {{currentTime}}'
+              }
               rows={3}
             />
           </Form.Item>
@@ -146,8 +178,12 @@ export const MonitorInfoEditor: React.FC<MonitorInfoEditorProps> = React.memo(
             )}
           >
             <Input.TextArea
-              placeholder="[{{monitorName}}] 🔴 Down&#10;Time: {{currentTime}}&#10;Error: {{errorMessage}}"
-              rows={3}
+              placeholder={
+                isVi
+                  ? '[{{monitorName}}] 🔴 Cảnh báo sự cố (DOWN)\nMục tiêu: {{url}}\nLỗi: {{errorMessage}}\nThời gian: {{currentTime}}'
+                  : '[{{monitorName}}] 🔴 Down\nTarget: {{url}}\nError: {{errorMessage}}\nTime: {{currentTime}}'
+              }
+              rows={4}
             />
           </Form.Item>
 

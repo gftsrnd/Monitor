@@ -47,6 +47,15 @@ export const WebsiteCodeBtn: React.FC<WebsiteCodeBtnProps> = React.memo(
           >
             <span>{trackScript}</span>
           </Typography.Paragraph>
+
+          <div className="mt-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">First-Party / Proxy Tip:</span>{' '}
+            To prevent ad-blockers from blocking analytics, you can also proxy or alias the tracking endpoint via{' '}
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+              /tj.js
+            </code>{' '}
+            or your custom domain proxy.
+          </div>
         </DialogContent>
       </Dialog>
     );

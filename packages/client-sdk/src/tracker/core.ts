@@ -38,6 +38,58 @@ export function getWebsiteDistinctId(data: Record<string, any>) {
   return undefined;
 }
 
+const REDACTED_QUERY_KEYS = new Set([
+  'token',
+  'magictoken',
+  'magic_token',
+  'access_token',
+  'refresh_token',
+  'id_token',
+  'e',
+  'session',
+  'search',
+  'code',
+  'state',
+  'conversation',
+  'reset',
+  'key',
+  'apikey',
+  'api_key',
+  'secret',
+  'password',
+  'pwd',
+  'jwt',
+  'sig',
+  'signature',
+  'auth',
+  'email',
+  'phone',
+]);
+
+export function sanitizeTrackedUrl(rawUrl?: string): string | undefined {
+  if (!rawUrl) return rawUrl;
+  const qIdx = rawUrl.indexOf('?');
+  if (qIdx === -1) return rawUrl;
+
+  const basePath = rawUrl.slice(0, qIdx);
+  const hashIdx = rawUrl.indexOf('#', qIdx);
+  const rawQuery =
+    hashIdx === -1 ? rawUrl.slice(qIdx + 1) : rawUrl.slice(qIdx + 1, hashIdx);
+
+  try {
+    const params = new URLSearchParams(rawQuery);
+    for (const key of [...params.keys()]) {
+      if (REDACTED_QUERY_KEYS.has(key.toLowerCase())) {
+        params.delete(key);
+      }
+    }
+    const cleanQuery = params.toString();
+    return cleanQuery ? `${basePath}?${cleanQuery}` : basePath;
+  } catch {
+    return basePath;
+  }
+}
+
 /**
  * Get basic browser information
  */
@@ -58,8 +110,8 @@ export function getBrowserInfo(): Partial<WebsiteEventPayload> {
     screen: `${width}x${height}`,
     language,
     title,
-    url: `${pathname}${search}`,
-    referrer: referrer || undefined,
+    url: sanitizeTrackedUrl(`${pathname}${search}`),
+    referrer: sanitizeTrackedUrl(referrer || undefined),
   };
 }
 
@@ -124,12 +176,17 @@ export function createTrackerCore(options: TrackerCoreOptions) {
 
   const getPayload = (
     overrides?: Partial<WebsiteEventPayload>
-  ): WebsiteEventPayload => ({
-    website: websiteId,
-    ...getBrowserInfo(),
-    ...(distinctId ? { distinctId } : {}),
-    ...overrides,
-  });
+  ): WebsiteEventPayload => {
+    const base: WebsiteEventPayload = {
+      website: websiteId,
+      ...getBrowserInfo(),
+      ...(distinctId ? { distinctId } : {}),
+      ...overrides,
+    };
+    if (base.url) base.url = sanitizeTrackedUrl(base.url);
+    if (base.referrer) base.referrer = sanitizeTrackedUrl(base.referrer);
+    return base;
+  };
 
   return {
     track: (

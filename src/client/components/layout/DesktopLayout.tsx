@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  LuBell,
   LuSquareActivity,
   LuChartArea,
   LuCompass,
@@ -33,7 +34,6 @@ import { useTranslation } from '@i18next-toolkit/react';
 import { CommandPanel } from '@/components/CommandPanel';
 import { RiSurveyLine } from 'react-icons/ri';
 import { WorkspacePauseTip } from '../workspace/WorkspacePauseTip';
-import { FreeTierTip } from '../FreeTierTip';
 import { DevContainer } from '../DevContainer';
 import { AIPanel } from '../ai/AIPanel';
 import { compact } from 'lodash-es';
@@ -62,6 +62,14 @@ export const DesktopLayout: React.FC<LayoutProps> = React.memo((props) => {
       enabled: !!workspaceId,
     }
   );
+  const { data: notifications = [] } = trpc.notification.all.useQuery(
+    {
+      workspaceId: workspaceId!,
+    },
+    {
+      enabled: !!workspaceId,
+    }
+  );
   const { t } = useTranslation();
   const { alphaMode: serverAlphaMode, enableFunctionWorker } =
     useGlobalConfig();
@@ -71,8 +79,30 @@ export const DesktopLayout: React.FC<LayoutProps> = React.memo((props) => {
     <>
       <div
         className={cn(
-          'flex h-[52px] items-center justify-center',
-          isCollapsed ? 'h-[52px]' : 'px-2'
+          'flex h-[52px] items-center gap-2.5 px-3',
+          isCollapsed && 'justify-center px-0'
+        )}
+      >
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-b from-amber-500/15 to-amber-500/5 ring-1 ring-amber-500/25 shadow-sm shadow-amber-500/5">
+          <img
+            className="h-6 w-6 drop-shadow-sm"
+            src="/icon.png"
+            alt="TFG Monitor"
+          />
+        </div>
+        {!isCollapsed && (
+          <div className="flex flex-1 items-center justify-between min-w-0">
+            <span className="truncate font-bold tracking-tight text-foreground text-sm">
+              TFG Monitor
+            </span>
+          </div>
+        )}
+      </div>
+      <Separator />
+      <div
+        className={cn(
+          'flex h-[48px] items-center justify-center',
+          isCollapsed ? 'h-[48px]' : 'px-2'
         )}
       >
         <WorkspaceSwitcher isCollapsed={isCollapsed} />
@@ -83,35 +113,9 @@ export const DesktopLayout: React.FC<LayoutProps> = React.memo((props) => {
       </div>
       <Separator />
 
-      <DevContainer>
-        <Nav
-          isCollapsed={isCollapsed}
-          links={[
-            {
-              title: t('Insights'),
-              icon: LuCompass,
-              to: '/insights',
-            },
-          ]}
-        />
-        <Separator />
-      </DevContainer>
-
       <Nav
         isCollapsed={isCollapsed}
         links={compact([
-          {
-            title: t('Website'),
-            label: String(serviceCount?.website ?? ''),
-            icon: LuChartArea,
-            to: '/website',
-          },
-          {
-            title: t('Application'),
-            label: String(serviceCount?.application ?? ''),
-            icon: LuTabletSmartphone,
-            to: '/application',
-          },
           {
             title: t('Monitor'),
             label: String(serviceCount?.monitor ?? ''),
@@ -119,28 +123,10 @@ export const DesktopLayout: React.FC<LayoutProps> = React.memo((props) => {
             to: '/monitor',
           },
           {
-            title: t('Servers'),
-            label: String(serviceCount?.server ?? ''),
-            icon: LuServer,
-            to: '/server',
-          },
-          {
-            title: t('Telemetry'),
-            label: String(serviceCount?.telemetry ?? ''),
-            icon: LuWifi,
-            to: '/telemetry',
-          },
-          {
-            title: t('Pages'),
-            label: String(serviceCount?.page ?? ''),
-            icon: LuFileChartPie,
-            to: '/page',
-          },
-          {
-            title: t('Survey'),
-            label: String(serviceCount?.survey ?? ''),
-            icon: RiSurveyLine,
-            to: '/survey',
+            title: t('Notifications'),
+            label: notifications.length > 0 ? String(notifications.length) : '',
+            icon: LuBell,
+            to: '/settings/notifications',
           },
           {
             title: t('Feed'),
@@ -149,45 +135,93 @@ export const DesktopLayout: React.FC<LayoutProps> = React.memo((props) => {
             to: '/feed',
           },
           {
-            title: t('Short Link'),
-            label: String(serviceCount?.shortLink ?? ''),
-            icon: LuLink,
-            to: '/shortlink',
-          },
-          alphaMode && {
-            title: t('Artifacts'),
-            icon: LuPanelsTopLeft,
-            to: '/artifacts',
+            title: t('Website'),
+            label: String(serviceCount?.website ?? ''),
+            icon: LuChartArea,
+            to: '/website',
           },
           {
-            title: t('AI Gateway'),
-            label: String(serviceCount?.aiGateway ?? ''),
-            icon: LuBrainCircuit,
-            to: '/aiGateway',
+            title: t('Servers'),
+            label: String(serviceCount?.server ?? ''),
+            icon: LuServer,
+            to: '/server',
           },
           {
-            title: t('AI Router'),
-            label: String(serviceCount?.aiRouter ?? ''),
-            icon: LuRoute,
-            to: '/aiRouter',
+            title: t('Pages'),
+            label: String(serviceCount?.page ?? ''),
+            icon: LuFileChartPie,
+            to: '/page',
           },
-          serverAlphaMode &&
-            enableFunctionWorker && {
-              title: t('Function'),
-              label: String(serviceCount?.functionWorker ?? ''),
-              icon: LuSquareFunction,
-              to: '/worker',
-            },
+          {
+            title: t('Insights'),
+            icon: LuCompass,
+            to: '/insights',
+          },
         ])}
       />
 
-      <Separator />
+      {alphaMode && (
+        <>
+          <Separator />
+          <DevContainer>
+            <Nav
+              isCollapsed={isCollapsed}
+              links={compact([
+                {
+                  title: t('Application'),
+                  label: String(serviceCount?.application ?? ''),
+                  icon: LuTabletSmartphone,
+                  to: '/application',
+                },
+                {
+                  title: t('Telemetry'),
+                  label: String(serviceCount?.telemetry ?? ''),
+                  icon: LuWifi,
+                  to: '/telemetry',
+                },
+                {
+                  title: t('Survey'),
+                  label: String(serviceCount?.survey ?? ''),
+                  icon: RiSurveyLine,
+                  to: '/survey',
+                },
+                {
+                  title: t('Short Link'),
+                  label: String(serviceCount?.shortLink ?? ''),
+                  icon: LuLink,
+                  to: '/shortlink',
+                },
+                {
+                  title: 'Artifacts',
+                  icon: LuPanelsTopLeft,
+                  to: '/artifacts',
+                },
+                {
+                  title: t('AI Gateway'),
+                  label: String(serviceCount?.aiGateway ?? ''),
+                  icon: LuBrainCircuit,
+                  to: '/aiGateway',
+                },
+                {
+                  title: t('AI Router'),
+                  label: String(serviceCount?.aiRouter ?? ''),
+                  icon: LuRoute,
+                  to: '/aiRouter',
+                },
+                serverAlphaMode &&
+                  enableFunctionWorker && {
+                    title: t('Function'),
+                    label: String(serviceCount?.functionWorker ?? ''),
+                    icon: LuSquareFunction,
+                    to: '/worker',
+                  },
+              ])}
+            />
+          </DevContainer>
+        </>
+      )}
 
       <div className="flex-1" />
-
-      <div className="p-2">
-        <FreeTierTip isCollapsed={isCollapsed} />
-      </div>
 
       <Separator />
 
@@ -200,7 +234,7 @@ export const DesktopLayout: React.FC<LayoutProps> = React.memo((props) => {
   return (
     <div className="flex h-full w-full flex-col">
       <WorkspacePauseTip />
-      <AIPanel />
+      {alphaMode && <AIPanel />}
 
       <ResizablePanelGroup
         className="flex-1 items-stretch"

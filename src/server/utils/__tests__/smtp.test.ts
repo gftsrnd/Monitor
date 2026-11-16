@@ -46,27 +46,26 @@ describe('generateSMTPHTML', () => {
     expect(result).toContain(button.url);
   });
 
-  it('should include Tianji brand information', () => {
+  it('should include TFG Monitor brand information', () => {
     const body = '<p>Test email</p>';
     const result = generateSMTPHTML(body);
 
     // Verify brand information exists
-    expect(result).toContain('Tianji');
-    expect(result).toContain('Insight into everything');
-    expect(result).toContain('https://tianji.dev/img/logo@128.png');
+    expect(result).toContain('TFG Monitor');
+    expect(result).toContain('/icon.png');
   });
 
-  it('should include footer and social media links', () => {
+  it('should include footer and clean white-label copyright', () => {
     const body = '<p>Test email</p>';
     const result = generateSMTPHTML(body);
 
     // Verify footer information
     expect(result).toContain('If you did not expect to receive this email');
-    expect(result).toContain('Tianji. All rights reserved.');
+    expect(result).toContain('TFG Monitor — Tin Funding Group. All rights reserved.');
 
-    // Verify social media links
-    expect(result).toContain('https://github.com/msgbyte/tianji');
-    expect(result).toContain('https://twitter.com/moonrailgun');
+    // Verify upstream social media links are removed
+    expect(result).not.toContain('https://github.com/msgbyte/tianji');
+    expect(result).not.toContain('https://twitter.com/moonrailgun');
   });
 });
 

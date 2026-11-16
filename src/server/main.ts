@@ -16,6 +16,8 @@ import { flushAllBatchWriters } from './utils/batchWriter.js';
 import { logSystemInfo } from './utils/system.js';
 import { monitorBroadcast } from './model/monitor/broadcast.js';
 import { workerCronBroadcast } from './model/worker/broadcast.js';
+import { prisma } from './model/_client.js';
+import { hashPassword } from './model/user.js';
 
 logSystemInfo();
 
@@ -27,7 +29,7 @@ let isShuttingDown = false;
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-initUdpServer(port);
+initUdpServer(port, env.host);
 
 const aiGatewayResponsesWebSocket =
   initAIGatewayResponsesWebSocket(httpServer);
@@ -76,13 +78,61 @@ async function startServer() {
     }
   }
 
-  httpServer.listen(port, () => {
-    logger.info(`Server is listening on port ${port}...`);
+  await bootstrapAdminPassword();
+
+  httpServer.listen(port, env.host, () => {
+    logger.info(`Server is listening on ${env.host}:${port}...`);
+    const displayHost = env.host === '0.0.0.0' ? '127.0.0.1' : env.host;
     if (env.allowOpenapi) {
-      logger.info(`Openapi UI: http://127.0.0.1:${port}/open/_ui`);
+      logger.info(`Openapi UI: http://${displayHost}:${port}/open/_ui`);
     }
-    logger.info(`Website: http://127.0.0.1:${port}`);
+    logger.info(`Website: http://${displayHost}:${port}`);
   });
+}
+
+async function bootstrapAdminPassword() {
+  const initialPassword = process.env.ADMIN_INITIAL_PASSWORD;
+  if (!initialPassword) return;
+
+  const FACTORY_HASH =
+    '$2a$10$V384zbubCaykNgBHs5mag.AngiWhAgRR.KLoxal7xh8sfOBwnASN2';
+
+  try {
+    const adminUser = await prisma.user.findFirst({
+      where: { username: 'admin' },
+    });
+
+    if (adminUser && adminUser.password === FACTORY_HASH) {
+      logger.info(
+        '[Security] Rotating factory admin password with ADMIN_INITIAL_PASSWORD...'
+      );
+      const newHash = await hashPassword(initialPassword);
+      await prisma.user.update({
+        where: { id: adminUser.id },
+        data: { password: newHash },
+      });
+
+      // Also rename default seeded workspace 'admin' to 'TFG Monitor' with Vietnam timezone
+      await prisma.workspace.updateMany({
+        where: {
+          id: 'clnzoxcy10001vy2ohi4obbi0',
+          name: 'admin',
+        },
+        data: {
+          name: 'TFG Monitor',
+          settings: {
+            timezone: process.env.TZ || 'Asia/Ho_Chi_Minh',
+          },
+        },
+      });
+
+      logger.info(
+        '[Security] Factory admin password rotated and default workspace renamed to TFG Monitor.'
+      );
+    }
+  } catch (err) {
+    logger.error('[Security] Failed to bootstrap admin password:', err);
+  }
 }
 
 // Graceful shutdown

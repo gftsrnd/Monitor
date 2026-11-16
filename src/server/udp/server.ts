@@ -2,7 +2,7 @@ import dgram from 'dgram';
 import { recordServerStatus } from '../model/serverStatus.js';
 import { logger } from '../utils/logger.js';
 
-export function initUdpServer(port: number) {
+export function initUdpServer(port: number, host = '0.0.0.0') {
   const server = dgram.createSocket('udp4');
 
   server.on('error', (err) => {
@@ -26,5 +26,5 @@ export function initUdpServer(port: number) {
     logger.info(`UDP Server is listening: ${address.address}:${address.port}`);
   });
 
-  server.bind(port);
+  server.bind(port, host);
 }

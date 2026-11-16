@@ -31,7 +31,11 @@ export class MonitorRunner {
    * Notice: Here is a issue which when workspace changed timezone and its will not effect immediately.
    */
   getTimezone(): string {
-    return get(this.workspace, ['settings', 'timezone']) || 'utc';
+    return (
+      get(this.workspace, ['settings', 'timezone']) ||
+      process.env.TZ ||
+      'Asia/Ho_Chi_Minh'
+    );
   }
 
   /**
@@ -118,7 +122,8 @@ export class MonitorRunner {
               relatedType: 'Monitor',
               content: `Monitor(id: ${monitor.id}) exec error: ${errorMessage}`,
             });
-            updateMonitorErrorMessage(this.monitor.id, errorMessage);
+            this.monitor.recentError = errorMessage;
+            await updateMonitorErrorMessage(this.monitor.id, errorMessage);
             value = -1;
           }
 
@@ -151,7 +156,7 @@ export class MonitorRunner {
                 `Monitor [${monitor.name}] has been up`
               );
 
-              const { title, content } = this.buildUpNotification();
+              const { title, content } = this.buildUpNotification(value);
               await this.notify(title, [token.text(content)]);
               await this.setCurrentStatus('UP');
             }
@@ -266,21 +271,34 @@ export class MonitorRunner {
     return dayjs().tz(this.getTimezone()).format('YYYY-MM-DD HH:mm:ss (z)');
   }
 
-  private buildUpNotification(): { title: string; content: string } {
+  private buildUpNotification(pingMs?: number): {
+    title: string;
+    content: string;
+  } {
     const monitor = this.monitor as MonitorWithNotification & {
       upMessageTemplate?: string | null;
     };
     const currentTime = this.getCurrentTime();
+    const targetUrl =
+      get(this.monitor.payload, 'url', '') ||
+      get(this.monitor.payload, 'hostname', '');
 
     const templateVars = {
       monitorName: monitor.name,
       currentTime,
       monitorType: monitor.type,
-      url: get(this.monitor.payload, 'url', '') || get(this.monitor.payload, 'hostname', ''),
+      url: targetUrl,
+      ping: pingMs ?? '',
     };
 
-    const defaultTitle = `[${monitor.name}] ✅ Up`;
-    const defaultContent = `[${monitor.name}] ✅ Up\nTime: ${currentTime}`;
+    const defaultTitle = `[${monitor.name}] ✅ Đã khôi phục (UP)`;
+    const defaultContent = [
+      `[${monitor.name}] ✅ Hoạt động trở lại${typeof pingMs === 'number' ? ` (${pingMs}ms)` : ''}`,
+      targetUrl ? `Mục tiêu: ${targetUrl}` : '',
+      `Thời gian: ${currentTime}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
 
     let title = defaultTitle;
     let content = defaultContent;
@@ -314,16 +332,27 @@ export class MonitorRunner {
     };
     const currentTime = this.getCurrentTime();
 
+    const targetUrl =
+      get(this.monitor.payload, 'url', '') ||
+      get(this.monitor.payload, 'hostname', '');
+
     const templateVars = {
       monitorName: monitor.name,
       currentTime,
       monitorType: monitor.type,
       errorMessage,
-      url: get(this.monitor.payload, 'url', '') || get(this.monitor.payload, 'hostname', ''),
+      url: targetUrl,
     };
 
-    const defaultTitle = `[${monitor.name}] 🔴 Down`;
-    const defaultContent = `[${monitor.name}] 🔴 Down\nTime: ${currentTime}\nError: ${errorMessage}`;
+    const defaultTitle = `[${monitor.name}] 🔴 Cảnh báo sự cố (DOWN)`;
+    const defaultContent = [
+      `[${monitor.name}] 🔴 Ngừng phản hồi (DOWN)`,
+      targetUrl ? `Mục tiêu: ${targetUrl}` : '',
+      `Lỗi chi tiết: ${errorMessage}`,
+      `Thời gian: ${currentTime}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
 
     let title = defaultTitle;
     let content = defaultContent;

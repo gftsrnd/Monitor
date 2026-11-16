@@ -20,7 +20,7 @@ export function generateSurveyExampleSDKCode(
 initOpenapiSDK('${host}');
 
 /**
- * Submit Survey into ${info?.name ?? 'Tianji'}
+ * Submit Survey into ${info?.name ?? 'TFG Monitor'}
  *
  * ${fields.map((field) => `@param {${field.type}} ${field.name} ${field.label}`).join('\n * ')}
  */

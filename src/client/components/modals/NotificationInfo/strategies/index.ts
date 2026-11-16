@@ -14,24 +14,14 @@ interface NotificationStrategy {
 
 export const notificationStrategies: NotificationStrategy[] = [
   {
-    label: 'Email(SMTP)',
-    name: 'smtp',
-    form: NotificationSMTP,
-  },
-  {
-    label: 'Apprise(Support 90+ services)',
-    name: 'apprise',
-    form: NotificationApprise,
-  },
-  {
     label: 'Telegram',
     name: 'telegram',
     form: NotificationTelegram,
   },
   {
-    label: 'Feishu',
-    name: 'feishu',
-    form: NotificationFeishu,
+    label: 'Email(SMTP)',
+    name: 'smtp',
+    form: NotificationSMTP,
   },
   {
     label: 'Webhook',
@@ -39,8 +29,18 @@ export const notificationStrategies: NotificationStrategy[] = [
     form: NotificationWebhook,
   },
   {
+    label: 'Apprise(Support 90+ services)',
+    name: 'apprise',
+    form: NotificationApprise,
+  },
+  {
     label: 'Teams',
     name: 'teams',
     form: NotificationTeams,
+  },
+  {
+    label: 'Feishu',
+    name: 'feishu',
+    form: NotificationFeishu,
   },
 ];

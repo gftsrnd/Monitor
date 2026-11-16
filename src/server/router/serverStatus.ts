@@ -37,18 +37,22 @@ serverStatusRouter.post(
 
 serverStatusRouter.get(
   '/:workspaceId/install.sh',
-  validate(param('workspaceId').isString()),
+  validate(param('workspaceId').matches(/^[a-zA-Z0-9_-]{1,64}$/)),
   async (req, res) => {
     const { workspaceId } = req.params;
     const queryUrl = req.query.url ? String(req.query.url) : undefined;
 
-    const server = queryUrl || `${req.protocol}://${req.get('Host')}`;
+    const rawServer = queryUrl || `${req.protocol}://${req.get('Host')}`;
+    if (!/^https?:\/\/[a-zA-Z0-9.:-]+$/.test(rawServer)) {
+      res.status(400).type('text/plain').send('Invalid server URL');
+      return;
+    }
 
     res
       .setHeader('Content-Type', 'text/plain')
       .send(
         String(installScript)
-          .replace('{{DEFAULT_SERVER}}', server)
+          .replace('{{DEFAULT_SERVER}}', rawServer)
           .replace('{{DEFAULT_WORKSPACE}}', workspaceId)
       );
   }

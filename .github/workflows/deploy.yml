@@ -1,0 +1,233 @@
+name: "Build and Deploy TFG Monitor"
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build_and_push:
+    name: Build, Smoke Test & Push
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: tianji
+          POSTGRES_USER: tianji
+          POSTGRES_PASSWORD: tianji
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tianji -d tianji"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set lower case image name
+        run: |
+          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into GHCR registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build local image with Buildx
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: PostgreSQL 15 Smoke Test
+        run: |
+          docker run -d --name tfg-monitor-ci --network host \
+            -e DATABASE_URL=postgresql://tianji:tianji@127.0.0.1:5432/tianji \
+            -e JWT_SECRET=0123456789012345678901234567890123456789 \
+            -e CUSTOM_TRACKER_SCRIPT_NAME=tj.js \
+            "${{ env.IMAGE_NAME }}:sha-${{ github.sha }}"
+
+          echo "Waiting for TFG Monitor to apply migrations and become healthy..."
+          healthy=0
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:12345/health > /dev/null 2>&1; then
+              echo "Healthcheck passed on attempt $i!"
+              healthy=1
+              break
+            fi
+            if [ "$(docker inspect --format '{{.State.Running}}' tfg-monitor-ci 2>/dev/null)" != "true" ]; then
+              echo "Container stopped unexpectedly during smoke test!"
+              docker logs tfg-monitor-ci
+              exit 1
+            fi
+            sleep 2
+          done
+
+          if [ "$healthy" -ne 1 ]; then
+            echo "Healthcheck timed out after 120s!"
+            docker logs tfg-monitor-ci
+            exit 1
+          fi
+
+          echo "Verifying custom tracker script (/tj.js)..."
+          curl --fail --silent http://127.0.0.1:12345/tj.js > /dev/null || {
+            echo "Failed to serve /tj.js";
+            docker logs tfg-monitor-ci;
+            exit 1;
+          }
+          echo "Tracker script /tj.js verified successfully!"
+
+      - name: Stop smoke test container
+        if: always()
+        run: docker rm --force tfg-monitor-ci || true
+
+      - name: Push image to GHCR
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker push "${{ env.IMAGE_NAME }}:sha-${{ github.sha }}"
+          docker push "${{ env.IMAGE_NAME }}:latest"
+
+  deploy:
+    name: Deploy to VPS
+    needs: build_and_push
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: Monitor
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-monitor
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout deploy scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            deploy
+
+      - name: Check deployment target configuration
+        env:
+          CHECK_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+          if [ -n "$CHECK_HOST" ]; then
+            echo "HAS_VPS_HOST=true" >> $GITHUB_ENV
+          else
+            echo "HAS_VPS_HOST=false" >> $GITHUB_ENV
+            echo "Notice: VPS_HOST secret is not set yet. Skipping SSH deployment step (image is already built, tested & pushed to GHCR)."
+          fi
+
+      - name: Sync deploy scripts to VPS (/opt/tfg-monitor-deploy)
+        if: env.HAS_VPS_HOST == 'true'
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ vars.VPS_PORT || '22' }}
+          source: "deploy/**"
+          target: /opt/tfg-monitor-deploy
+
+      - name: Deploy via SSH
+        if: env.HAS_VPS_HOST == 'true'
+        uses: appleboy/ssh-action@v1
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ vars.VPS_PORT || '22' }}
+          envs: RELEASE_SHA,IMAGE_NAME,GHCR_TOKEN,GHCR_USER
+          command_timeout: 20m
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            TARGET_TAG="${IMAGE_NAME}:sha-${RELEASE_SHA}"
+            chmod 0700 /opt/tfg-monitor-deploy /opt/tfg-monitor-deploy/deploy/setup-vps.sh 2>/dev/null || true
+
+            echo "== Pre-loading private GHCR image onto VPS =="
+            if [ -n "${GHCR_TOKEN:-}" ]; then
+              echo "$GHCR_TOKEN" | podman login ghcr.io -u "${GHCR_USER:-gftsrnd}" --password-stdin || true
+            fi
+            podman pull "$TARGET_TAG"
+            podman logout ghcr.io >/dev/null 2>&1 || true
+
+            if [ ! -f /etc/systemd/system/tfg-monitor.service ]; then
+              podman tag "$TARGET_TAG" "${IMAGE_NAME}:current"
+              echo "================================================================================"
+              echo "Image ${TARGET_TAG} & deploy scripts are now pre-loaded on VPS!"
+              echo "Run once on VPS to complete first-time bootstrap:"
+              echo "  bash /opt/tfg-monitor-deploy/deploy/setup-vps.sh"
+              echo "================================================================================"
+              exit 0
+            fi
+
+            echo "== Updating local tags and saving :previous for instant rollback =="
+            if podman image exists "${IMAGE_NAME}:current"; then
+              podman tag "${IMAGE_NAME}:current" "${IMAGE_NAME}:previous"
+            fi
+            podman tag "$TARGET_TAG" "${IMAGE_NAME}:current"
+
+            echo "== Restarting tfg-monitor.service =="
+            sudo systemctl restart tfg-monitor.service
+
+            echo "== Polling healthcheck at http://127.0.0.1:12345/health =="
+            healthy=0
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:12345/health > /dev/null 2>&1; then
+                echo "Healthcheck passed on attempt $i!"
+                healthy=1
+                break
+              fi
+              sleep 2
+            done
+
+            if [ "$healthy" -ne 1 ]; then
+              echo "!! Healthcheck failed after 30 attempts! Rolling back..."
+              sudo systemctl status tfg-monitor.service --no-pager || true
+              sudo journalctl -u tfg-monitor.service -n 50 --no-pager || true
+
+              if podman image exists "${IMAGE_NAME}:previous"; then
+                echo "Rolling back to ${IMAGE_NAME}:previous..."
+                podman tag "${IMAGE_NAME}:previous" "${IMAGE_NAME}:current"
+                sudo systemctl restart tfg-monitor.service
+                echo "Rolled back to previous image."
+              else
+                echo "No :previous image available for rollback."
+              fi
+              exit 1
+            fi
+
+            echo "== Deploy succeeded! Cleaning old untagged images =="
+            podman image prune -f || true
+            echo "Deploy complete: ${RELEASE_SHA}"

@@ -22,7 +22,12 @@ monitorRouter.get(
     const showDetail = checkEnvTrusty(String(req.query.showDetail));
 
     const [info] = await getMonitorPublicInfos([monitorId]);
-    const [{ value }] = await getMonitorRecentData(workspaceId, monitorId, 1);
+    if (!info) {
+      res.status(404).send('Monitor not found');
+      return;
+    }
+    const recentData = await getMonitorRecentData(workspaceId, monitorId, 1);
+    const value = recentData[0]?.value ?? -1;
 
     const svg =
       value >= 0

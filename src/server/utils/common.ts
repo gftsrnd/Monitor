@@ -74,10 +74,17 @@ export function flattenJSON(
     value: any;
     dynamicDataType: DynamicDataType;
   }[] = [],
-  parentKey = ''
+  parentKey = '',
+  depth = 0
 ): { key: string; value: any; dynamicDataType: DynamicDataType }[] {
+  if (!eventData || typeof eventData !== 'object' || depth > 4) {
+    return keyValues;
+  }
   return Object.keys(eventData).reduce(
     (acc, key) => {
+      if (acc.keyValues.length >= 60) {
+        return acc;
+      }
       const value = eventData[key];
       const type = typeof eventData[key];
 
@@ -88,7 +95,14 @@ export function flattenJSON(
         !Array.isArray(value) &&
         !isValidDate(value)
       ) {
-        flattenJSON(value, acc.keyValues, getKeyName(key, parentKey));
+        if (depth < 4) {
+          flattenJSON(
+            value,
+            acc.keyValues,
+            getKeyName(key, parentKey),
+            depth + 1
+          );
+        }
       } else {
         createKey(getKeyName(key, parentKey), value, acc);
       }

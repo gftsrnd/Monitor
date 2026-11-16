@@ -177,7 +177,7 @@ export const UserConfig: React.FC<UserConfigProps> = React.memo((props) => {
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
                 <DropdownMenuRadioGroup
-                  value={i18n.language ?? 'en'}
+                  value={i18n.language || 'vi-VN'}
                   onValueChange={setLanguage}
                 >
                   {languages.map((language) => (
@@ -216,31 +216,6 @@ export const UserConfig: React.FC<UserConfigProps> = React.memo((props) => {
           </DropdownMenuSub>
 
           <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            onClick={() => window.open('https://tianji.dev/docs/intro')}
-          >
-            {t('Document')}
-          </DropdownMenuItem>
-
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>{t('Community')}</DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem
-                  onClick={() => window.open('https://discord.gg/8Vv47wAEej')}
-                >
-                  {t('Join Discord')}
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => window.open('https://twitter.com/moonrailgun')}
-                >
-                  {t('Follow Twitter')}
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
 
           <DropdownMenuLabel className="text-gray-500">
             v{version}

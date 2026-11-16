@@ -93,6 +93,6 @@ COPY --from=reporter /app/reporter/tianji-reporter /usr/local/bin/tianji-reporte
 EXPOSE 12345
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:12345/health || exit 1
+  CMD curl -f http://127.0.0.1:12345/health || exit 1
 
-CMD ["sh", "-c", "(cd /app/tianji/src/server && ./node_modules/.bin/prisma migrate deploy && ./node_modules/.bin/tsx ./clickhouse/scripts/apply.ts && NODE_ENV=production node ./dist/src/server/main.js) & sleep 10; /usr/local/bin/tianji-reporter --url \"http://localhost:12345\" --workspace \"clnzoxcy10001vy2ohi4obbi0\" --name \"tianji-container\" --silent > /dev/null & wait -n"]
+CMD ["sh", "-c", "cd /app/tianji/src/server && ./node_modules/.bin/prisma migrate deploy && ./node_modules/.bin/tsx ./clickhouse/scripts/apply.ts && if [ -n \"$TIANJI_REPORTER_WORKSPACE\" ]; then (sleep 5 && /usr/local/bin/tianji-reporter --url \"http://127.0.0.1:${PORT:-12345}\" --workspace \"$TIANJI_REPORTER_WORKSPACE\" --name \"${TIANJI_REPORTER_NAME:-vps-main}\" --silent >/dev/null 2>&1) & true; fi && NODE_ENV=production exec node --max-old-space-size=512 ./dist/src/server/main.js"]

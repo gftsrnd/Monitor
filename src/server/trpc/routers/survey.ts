@@ -236,16 +236,39 @@ export const surveyRouter = router({
           }
 
           if (survey && survey.webhookUrl) {
-            axios
-              .post(survey.webhookUrl, {
-                ...result,
-              })
-              .then(() => {
-                logger.info(
-                  `[surveySubmitWebhook] send webhooks to ${survey.webhookUrl} success!`
-                );
-              })
-              .catch((err) => logger.error('[surveySubmitWebhook]', err));
+            try {
+              const parsed = new URL(survey.webhookUrl);
+              const host = parsed.hostname.toLowerCase();
+              const isBlocked =
+                (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') ||
+                (process.env.ALLOW_LOCAL_WEBHOOKS !== 'true' &&
+                  (host === 'localhost' ||
+                    host === '127.0.0.1' ||
+                    host === '0.0.0.0' ||
+                    host === '::1' ||
+                    host === '169.254.169.254' ||
+                    host.startsWith('127.') ||
+                    host.startsWith('169.254.')));
+              if (isBlocked) {
+                throw new Error('Blocked unsafe survey webhook target');
+              }
+              axios
+                .post(
+                  parsed.toString(),
+                  {
+                    ...result,
+                  },
+                  { timeout: 10000 }
+                )
+                .then(() => {
+                  logger.info(
+                    `[surveySubmitWebhook] send webhooks to ${survey.webhookUrl} success!`
+                  );
+                })
+                .catch((err) => logger.error('[surveySubmitWebhook]', err));
+            } catch (err) {
+              logger.error('[surveySubmitWebhook]', err);
+            }
           }
         });
 

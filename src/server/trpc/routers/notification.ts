@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { prisma } from '../../model/_client.js';
 import { sendNotification } from '../../model/notification/index.js';
 import { token } from '../../model/notification/token/index.js';
+import { env } from '../../utils/env.js';
 
 export const notificationRouter = router({
   all: workspaceProcedure.query(({ input }) => {
@@ -30,10 +31,12 @@ export const notificationRouter = router({
     )
     .mutation(async ({ input }) => {
       await sendNotification(input, `${input.name} Notification Testing`, [
-        token.title('Tianji: Insight into everything', 2),
+        token.title('TFG Monitor — Hệ thống Giám sát & Phân tích', 2),
         token.text(`This is Notification Testing from ${input.name}`),
         token.newline(),
-        token.image('https://tianji.dev/img/social-card.png'),
+        token.image(
+          `${env.publicUrl || 'https://monitor.tinfundinggroup.net'}/icon.png`
+        ),
       ]);
     }),
   upsert: workspaceWriteProcedure

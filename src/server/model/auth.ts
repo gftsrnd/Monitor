@@ -73,8 +73,8 @@ export const authConfig: Omit<AuthConfig, 'raw'> = {
           const result = await transport.sendMail({
             to: identifier,
             from: provider.from,
-            subject: `Sign in Tianji to ${host}`,
-            text: `Sign in Tianji to ${host}\n${url}\n\n`,
+            subject: `Sign in to TFG Monitor (${host})`,
+            text: `Sign in to TFG Monitor (${host})\n${url}\n\n`,
             html: nodemailHtmlBody({ url, host, theme }),
           });
           const failed = result.rejected.concat(result.pending).filter(Boolean);
@@ -358,7 +358,7 @@ function nodemailHtmlBody(params: { url: string; host: string; theme: Theme }) {
     <tr>
       <td align="center"
         style="padding: 10px 0px; font-size: 22px; font-family: Helvetica, Arial, sans-serif; color: ${color.text};">
-        Sign in Tianji to <strong>${escapedHost}</strong>
+        Sign in to TFG Monitor (<strong>${escapedHost}</strong>)
       </td>
     </tr>
     <tr>

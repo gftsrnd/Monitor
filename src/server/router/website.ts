@@ -1,4 +1,4 @@
-import { type Response, Router } from 'express';
+import { type Request, type Response, type NextFunction, Router } from 'express';
 import { body, validate } from '../middleware/validate.js';
 import * as yup from 'yup';
 import { COLLECTION_TYPE } from '../utils/const.js';
@@ -16,8 +16,93 @@ import {
   promWebsiteSessionErrorCounter,
 } from '../utils/prometheus/client.js';
 import { logger } from '../utils/logger.js';
+import { getIpAddress } from '../utils/detect.js';
 
 export const websiteRouter = Router();
+
+const SENSITIVE_QUERY_KEYS = new Set([
+  'token',
+  'magictoken',
+  'magic_token',
+  'access_token',
+  'refresh_token',
+  'id_token',
+  'e',
+  'session',
+  'search',
+  'code',
+  'state',
+  'conversation',
+  'reset',
+  'key',
+  'apikey',
+  'api_key',
+  'secret',
+  'password',
+  'pwd',
+  'jwt',
+  'sig',
+  'signature',
+  'auth',
+  'email',
+  'phone',
+]);
+
+function sanitizeQueryString(rawQuery?: string): string | undefined {
+  if (!rawQuery) return undefined;
+  try {
+    const params = new URLSearchParams(rawQuery);
+    for (const key of [...params.keys()]) {
+      if (SENSITIVE_QUERY_KEYS.has(key.toLowerCase())) {
+        params.delete(key);
+      }
+    }
+    const cleaned = params.toString();
+    return cleaned || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function sanitizeUrlPath(rawPath?: string): string {
+  if (!rawPath) return '/';
+  // Mask confidential financial case IDs if ever hit directly
+  return rawPath.replace(
+    /^(\/(?:doctor|nurse|admin)\/cases\/)[^/]+/i,
+    '$1[redacted]'
+  );
+}
+
+// Lightweight per-IP sliding rate limiter (max 180 tracking requests / 60s per IP)
+const RATE_WINDOW_MS = 60_000;
+const RATE_MAX_REQUESTS = 180;
+const ipHits = new Map<string, { count: number; resetAt: number }>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of ipHits) {
+    if (entry.resetAt <= now) {
+      ipHits.delete(ip);
+    }
+  }
+}, 5 * 60_000).unref();
+
+function websiteRateLimit(req: Request, res: Response, next: NextFunction) {
+  const ip = getIpAddress(req) || req.ip || 'unknown';
+  const now = Date.now();
+  const entry = ipHits.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    ipHits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    next();
+    return;
+  }
+  entry.count += 1;
+  if (entry.count > RATE_MAX_REQUESTS) {
+    res.status(429).json({ error: 'Too many tracking requests.' });
+    return;
+  }
+  next();
+}
 
 // Shared validation schema for event payload
 const eventPayloadSchema = yup.object().shape({
@@ -86,13 +171,22 @@ async function processEvent(type: string, payload: any, session: any) {
     if (!urlPath) {
       urlPath = '/';
     }
+    urlPath = sanitizeUrlPath(urlPath);
 
     if (referrerPath?.startsWith('http')) {
-      const refUrl = new URL(referrer);
-      referrerPath = refUrl.pathname;
-      referrerQuery = refUrl.search.substring(1);
-      referrerDomain = refUrl.hostname.replace(/www\./, '');
+      try {
+        const refUrl = new URL(referrer);
+        referrerPath = sanitizeUrlPath(refUrl.pathname);
+        referrerQuery = refUrl.search.substring(1);
+        referrerDomain = refUrl.hostname.replace(/www\./, '');
+      } catch {
+        referrerPath = undefined;
+        referrerQuery = undefined;
+      }
     }
+
+    urlQuery = sanitizeQueryString(urlQuery);
+    referrerQuery = sanitizeQueryString(referrerQuery);
 
     if (process.env.REMOVE_TRAILING_SLASH) {
       urlPath = urlPath.replace(/.+\/$/, '');
@@ -155,6 +249,7 @@ async function processEvent(type: string, payload: any, session: any) {
 
 websiteRouter.post(
   '/send',
+  websiteRateLimit,
   validate(
     body('payload')
       .exists()
@@ -198,14 +293,15 @@ websiteRouter.post(
 
 websiteRouter.post(
   '/batch',
+  websiteRateLimit,
   validate(
     body('events')
       .exists()
       .withMessage('events should be existed')
-      .isArray({ min: 1, max: 100 })
-      .withMessage('events should be an array with 1-100 items')
+      .isArray({ min: 1, max: 25 })
+      .withMessage('events should be an array with 1-25 items')
       .custom(async (events) => {
-        // Validate each event in the array
+        // Validate each event in the array and ensure all share the same websiteId
         const eventSchema = yup.object().shape({
           type: yup
             .string()
@@ -214,8 +310,12 @@ websiteRouter.post(
           payload: eventPayloadSchema.required(),
         });
 
+        const primaryWebsite = events[0]?.payload?.website;
         for (const event of events) {
           await eventSchema.validate(event);
+          if (event.payload?.website !== primaryWebsite) {
+            throw new Error('All batched events must belong to the same website');
+          }
         }
         return true;
       })

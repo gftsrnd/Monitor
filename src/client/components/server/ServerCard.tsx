@@ -79,7 +79,7 @@ export const ServerCard: React.FC<ServerCardProps> = React.memo(
               ) : (
                 <Tooltip>
                   <TooltipTrigger>
-                    <Badge status="error" text="offline" />
+                    <Badge status="error" text={t('Offline')} />
                   </TooltipTrigger>
                   <TooltipContent>
                     {t('Last online: {{time}}', {

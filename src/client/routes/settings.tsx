@@ -3,7 +3,7 @@ import { CommonList } from '@/components/CommonList';
 import { CommonWrapper } from '@/components/CommonWrapper';
 import { Layout } from '@/components/layout';
 import { useGlobalConfig } from '@/hooks/useConfig';
-import { isDev } from '@/utils/env';
+import { useSettingsStore } from '@/store/settings';
 import { routeAuthBeforeLoad } from '@/utils/route';
 import { useTranslation } from '@i18next-toolkit/react';
 import {
@@ -26,8 +26,14 @@ function PageComponent() {
     select: (state) => state.location.pathname,
   });
   const { enableBilling } = useGlobalConfig();
+  const alphaMode = useSettingsStore((state) => state.alphaMode);
 
   const items = compact([
+    {
+      id: 'notifications',
+      title: t('Notifications'),
+      href: '/settings/notifications',
+    },
     {
       id: 'profile',
       title: t('Profile'),
@@ -39,19 +45,9 @@ function PageComponent() {
       href: '/settings/general',
     },
     {
-      id: 'notifications',
-      title: t('Notifications'),
-      href: '/settings/notifications',
-    },
-    {
       id: 'workspace',
       title: t('Workspace'),
       href: '/settings/workspace',
-    },
-    isDev && {
-      id: 'warehouse',
-      title: t('Warehouse'),
-      href: '/settings/warehouse',
     },
     {
       id: 'apiKey',
@@ -63,16 +59,22 @@ function PageComponent() {
       title: t('Audit Log'),
       href: '/settings/auditLog',
     },
-    {
+    alphaMode && {
+      id: 'warehouse',
+      title: t('Warehouse'),
+      href: '/settings/warehouse',
+    },
+    alphaMode && {
       id: 'usage',
       title: t('Usage'),
       href: '/settings/usage',
     },
-    enableBilling && {
-      id: 'billing',
-      title: t('Billing'),
-      href: '/settings/billing',
-    },
+    alphaMode &&
+      enableBilling && {
+        id: 'billing',
+        title: t('Billing'),
+        href: '/settings/billing',
+      },
   ]);
 
   useEffect(() => {

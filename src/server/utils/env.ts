@@ -19,7 +19,11 @@ export const env = {
   isDev,
   isTest: process.env.NODE_ENV === 'test',
   jwtSecret,
+  jwtIssuer: process.env.JWT_ISSUER || 'monitor.tinfundinggroup.net',
+  jwtAudience: process.env.JWT_AUDIENCE || 'tinfundinggroup.net',
   port: Number(process.env.PORT || 12345),
+  host: process.env.HOST || '0.0.0.0',
+  clientIpHeader: process.env.CLIENT_IP_HEADER,
   auth: {
     rateLimitEnabled: !checkEnvTrusty(process.env.DISABLE_AUTH_RATE),
     provider: compact([

@@ -1,8 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { jwtSecret } from '../utils/common.js';
 
-export const jwtIssuer = process.env.JWT_ISSUER || 'tianji.msgbyte.com';
-export const jwtAudience = process.env.JWT_AUDIENCE || 'msgbyte.com';
+export const jwtIssuer =
+  process.env.JWT_ISSUER || 'monitor.tinfundinggroup.net';
+export const jwtAudience =
+  process.env.JWT_AUDIENCE || 'tinfundinggroup.net';
 
 export interface JWTPayload {
   id: string;

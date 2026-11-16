@@ -4,11 +4,13 @@ import {
   authUser,
   authUserWithToken,
   changeUserPassword,
+  completeInitialPasswordSetup,
   createAdminUser,
   createUser,
   generateUserApiKey,
   getUserCount,
   getUserInfo,
+  isUsingInitialBootstrapPassword,
 } from '../../model/user.js';
 import { jwtSign } from '../../middleware/auth.js';
 import { TRPCError } from '@trpc/server';
@@ -186,6 +188,48 @@ export const userRouter = router({
       }
 
       return result;
+    }),
+  firstLoginStatus: protectProedure
+    .input(z.void())
+    .output(
+      z.object({
+        mustChangePassword: z.boolean(),
+      })
+    )
+    .query(async ({ ctx }) => {
+      const mustChangePassword = await isUsingInitialBootstrapPassword(
+        ctx.user.id
+      );
+      return { mustChangePassword };
+    }),
+  completeFirstLoginPassword: protectProedure
+    .input(
+      z.object({
+        newPassword: z.string().min(8).max(128),
+      })
+    )
+    .output(
+      z.object({
+        ok: z.boolean(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      await completeInitialPasswordSetup(ctx.user.id, input.newPassword);
+
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.user.id },
+        select: { currentWorkspaceId: true, username: true },
+      });
+      if (user?.currentWorkspaceId) {
+        await createAuditLog({
+          workspaceId: user.currentWorkspaceId,
+          relatedId: ctx.user.id,
+          relatedType: 'User',
+          content: `Admin completed first-login custom password setup: ${user.username}`,
+        });
+      }
+
+      return { ok: true };
     }),
   info: protectProedure
     .input(z.void())

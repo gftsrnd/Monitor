@@ -12,31 +12,36 @@ export const feishu: NotificationProvider = {
     const payload = notification.payload as unknown as FeishuPayload;
     const webhookUrl = payload.webhookUrl;
     if (
-      !webhookUrl.startsWith('https://open.feishu.cn/open-apis/bot/v2/hook')
+      !webhookUrl.startsWith('https://open.feishu.cn/open-apis/bot/v2/hook') &&
+      !webhookUrl.startsWith('https://open.larksuite.com/open-apis/bot/v2/hook')
     ) {
-      throw new Error('Is not a valid feishu webhook url');
+      throw new Error('Is not a valid Feishu / Lark webhook url');
     }
 
     const content = markdownContentTokenizer.parse(message);
 
     // Document: https://open.larksuite.com/document/common-capabilities/message-card/message-cards-content/using-markdown-tags
-    await axios.post(webhookUrl, {
-      msg_type: 'interactive',
-      card: {
-        elements: [
-          {
-            tag: 'markdown',
-            content,
+    await axios.post(
+      webhookUrl,
+      {
+        msg_type: 'interactive',
+        card: {
+          elements: [
+            {
+              tag: 'markdown',
+              content,
+            },
+          ],
+          header: {
+            title: {
+              content: title,
+              tag: 'plain_text',
+            },
+            template: 'blue',
           },
-        ],
-        header: {
-          title: {
-            content: title,
-            tag: 'plain_text',
-          },
-          template: 'blue',
         },
       },
-    });
+      { timeout: 15000 }
+    );
   },
 };

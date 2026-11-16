@@ -89,9 +89,9 @@ function buildApplicationUsageExamples(args: {
   return {
     prompt: {
       label: args.labels.prompt,
-      code: `Integrate Tianji application tracking into this project.
+      code: `Integrate TFG Monitor application tracking into this project.
 
-Tianji server URL: ${serverUrl}
+TFG Monitor server URL: ${serverUrl}
 Application ID: ${applicationId}
 Documentation: ${DOCS_URL}
 
@@ -116,7 +116,7 @@ Rules:
 - Never send passwords, tokens, request bodies, or other secrets.
 - Tracking must never crash or block the app.
 
-When done, list the changed files and explain how to verify that events appear in the Tianji dashboard.`,
+When done, list the changed files and explain how to verify that events appear in the TFG Monitor dashboard.`,
     },
     reactNative: {
       label: args.labels.reactNative,

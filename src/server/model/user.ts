@@ -10,12 +10,71 @@ import { logger } from '../utils/logger.js';
 import { promUserCounter } from '../utils/prometheus/client.js';
 import { env } from '../utils/env.js';
 
-async function hashPassword(password: string) {
+const FACTORY_ADMIN_HASH =
+  '$2a$10$V384zbubCaykNgBHs5mag.AngiWhAgRR.KLoxal7xh8sfOBwnASN2';
+
+export async function hashPassword(password: string) {
   return await bcryptjs.hash(password, 10);
 }
 
 function comparePassword(password: string, hash: string): Promise<boolean> {
   return bcryptjs.compare(password, hash);
+}
+
+export async function isUsingInitialBootstrapPassword(
+  userId: string
+): Promise<boolean> {
+  if (process.env.ADMIN_PASSWORD_CUSTOMIZED === 'true') {
+    return false;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { username: true, password: true },
+  });
+
+  if (!user || user.username !== 'admin') {
+    return false;
+  }
+
+  if (user.password === FACTORY_ADMIN_HASH) {
+    return true;
+  }
+
+  const initialPassword = process.env.ADMIN_INITIAL_PASSWORD;
+  if (!initialPassword) {
+    return false;
+  }
+
+  return await comparePassword(initialPassword, user.password);
+}
+
+export async function completeInitialPasswordSetup(
+  userId: string,
+  newPassword: string
+): Promise<void> {
+  const needsSetup = await isUsingInitialBootstrapPassword(userId);
+  if (!needsSetup) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Initial password has already been customized.',
+    });
+  }
+
+  const initialPassword = process.env.ADMIN_INITIAL_PASSWORD;
+  if (initialPassword && newPassword === initialPassword) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'New password must be different from the temporary bootstrap password.',
+    });
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      password: await hashPassword(newPassword),
+    },
+  });
 }
 
 export async function getUserCount(): Promise<number> {

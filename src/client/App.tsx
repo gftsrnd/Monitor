@@ -16,6 +16,7 @@ import { DefaultError } from './components/DefaultError';
 import { useAntdTheme } from './hooks/useTheme';
 import { recordPageView } from './utils/tracker';
 import { useThemeInit } from './store/settings';
+import { FirstLoginPasswordModal } from './components/modals/FirstLoginPasswordModal';
 
 const router = createRouter({
   routeTree,
@@ -47,6 +48,7 @@ const AppRouter: React.FC = React.memo(() => {
       {/* Compatible with old routes */}
       <TooltipProvider delayDuration={0}>
         <RouterProvider router={router} context={{ userInfo }} />
+        <FirstLoginPasswordModal />
       </TooltipProvider>
 
       <Toaster position="top-center" />

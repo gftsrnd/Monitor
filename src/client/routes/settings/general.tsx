@@ -27,7 +27,7 @@ function PageComponent() {
               <Select
                 id="interface-language"
                 className="w-full max-w-xs"
-                value={i18n.language ?? 'en'}
+                value={i18n.language || 'vi-VN'}
                 options={languages}
                 fieldNames={{ value: 'key' }}
                 onChange={setLanguage}

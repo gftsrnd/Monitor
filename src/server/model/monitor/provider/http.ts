@@ -67,6 +67,29 @@ export const http: MonitorProvider<{
       config.body = bodyValue;
     }
 
+    const parsedTarget = new URL(url);
+    if (parsedTarget.protocol !== 'http:' && parsedTarget.protocol !== 'https:') {
+      throw new Error('Monitor URL must use http:// or https://');
+    }
+    const targetHost = parsedTarget.hostname.toLowerCase();
+    const targetPort = Number(
+      parsedTarget.port || (parsedTarget.protocol === 'https:' ? 443 : 80)
+    );
+    const isLoopback =
+      targetHost === 'localhost' ||
+      targetHost === '127.0.0.1' ||
+      targetHost === '0.0.0.0' ||
+      targetHost === '::1' ||
+      targetHost.startsWith('127.');
+    if (
+      targetHost === '169.254.169.254' ||
+      targetHost.startsWith('169.254.') ||
+      [22, 5432, 6379].includes(targetPort) ||
+      (isLoopback && process.env.ALLOW_LOCAL_MONITORS !== 'true')
+    ) {
+      throw new Error('SSRF protection: loopback, cloud metadata, and internal DB/Redis/SSH ports are blocked');
+    }
+
     const isHttps = url.toLowerCase().startsWith('https:');
 
     if (isHttps) {
@@ -132,14 +155,13 @@ export const http: MonitorProvider<{
 
       return diff;
     } catch (err) {
-      logger.error(`run monitor(${monitor.id}) http error`, String(err));
-      updateMonitorErrorMessage(
-        monitor.id,
-        `run monitor(${monitor.id}) http error: ${String(err)}`
-      ).catch((err) => {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error(`run monitor(${monitor.id}) http error`, errMsg);
+      monitor.recentError = errMsg;
+      await updateMonitorErrorMessage(monitor.id, errMsg).catch((updateErr) => {
         logger.error(
           `run monitor(${monitor.id}) update monitor error message failed:`,
-          String(err)
+          String(updateErr)
         );
       });
       return -1;

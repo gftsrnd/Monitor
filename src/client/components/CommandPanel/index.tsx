@@ -10,6 +10,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import {
+  LuBell,
   LuSquareActivity,
   LuChartArea,
   LuBellDot,
@@ -31,6 +32,7 @@ import { useCommandState } from 'cmdk';
 import { useTranslation } from '@i18next-toolkit/react';
 import { trpc } from '@/api/trpc';
 import { useCurrentWorkspaceId } from '@/store/user';
+import { useSettingsStore } from '@/store/settings';
 import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { CommandType, useCommandPanelStore } from './store';
@@ -44,6 +46,7 @@ export const CommandPanel: React.FC<CommandPanelProps> = React.memo((props) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const alphaMode = useSettingsStore((state) => state.alphaMode);
   const commands = useCommandPanelStore((state) => state.commands);
   const currentPageCommands = useMemo(
     () => Object.entries(commands),
@@ -123,19 +126,35 @@ export const CommandPanel: React.FC<CommandPanelProps> = React.memo((props) => {
             <CommandGroup heading={t('Suggestions')}>
               <CommandItem
                 onSelect={handleJump({
-                  to: '/website',
-                })}
-              >
-                <LuChartArea className="mr-2 h-4 w-4" />
-                {t('Website')}
-              </CommandItem>
-              <CommandItem
-                onSelect={handleJump({
                   to: '/monitor',
                 })}
               >
                 <LuMonitorDot className="mr-2 h-4 w-4" />
                 {t('Monitor')}
+              </CommandItem>
+              <CommandItem
+                onSelect={handleJump({
+                  to: '/settings/notifications',
+                })}
+              >
+                <LuBell className="mr-2 h-4 w-4" />
+                {t('Notifications')}
+              </CommandItem>
+              <CommandItem
+                onSelect={handleJump({
+                  to: '/feed',
+                })}
+              >
+                <LuSquareActivity className="mr-2 h-4 w-4" />
+                {t('Feed')}
+              </CommandItem>
+              <CommandItem
+                onSelect={handleJump({
+                  to: '/website',
+                })}
+              >
+                <LuChartArea className="mr-2 h-4 w-4" />
+                {t('Website')}
               </CommandItem>
               <CommandItem
                 onSelect={handleJump({
@@ -147,47 +166,35 @@ export const CommandPanel: React.FC<CommandPanelProps> = React.memo((props) => {
               </CommandItem>
               <CommandItem
                 onSelect={handleJump({
-                  to: '/telemetry',
-                })}
-              >
-                <LuWifi className="mr-2 h-4 w-4" />
-                {t('Telemetry')}
-              </CommandItem>
-              <CommandItem
-                onSelect={handleJump({
                   to: '/page',
                 })}
               >
                 <LuFileChartPie className="mr-2 h-4 w-4" />
                 {t('Pages')}
               </CommandItem>
-              <CommandItem
-                onSelect={handleJump({
-                  to: '/survey',
-                })}
-              >
-                <RiSurveyLine className="mr-2 h-4 w-4" />
-                {t('Survey')}
-              </CommandItem>
-              <CommandItem
-                onSelect={handleJump({
-                  to: '/feed',
-                })}
-              >
-                <LuSquareActivity className="mr-2 h-4 w-4" />
-                {t('Feed')}
-              </CommandItem>
+              {alphaMode && (
+                <>
+                  <CommandItem
+                    onSelect={handleJump({
+                      to: '/telemetry',
+                    })}
+                  >
+                    <LuWifi className="mr-2 h-4 w-4" />
+                    {t('Telemetry')}
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={handleJump({
+                      to: '/survey',
+                    })}
+                  >
+                    <RiSurveyLine className="mr-2 h-4 w-4" />
+                    {t('Survey')}
+                  </CommandItem>
+                </>
+              )}
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup heading={t('Settings')}>
-              <CommandItem
-                onSelect={handleJump({
-                  to: '/settings/profile',
-                })}
-              >
-                <LuCircleUserRound className="mr-2 h-4 w-4" />
-                <span>{t('Profile')}</span>
-              </CommandItem>
               <CommandItem
                 onSelect={handleJump({
                   to: '/settings/notifications',
@@ -198,20 +205,30 @@ export const CommandPanel: React.FC<CommandPanelProps> = React.memo((props) => {
               </CommandItem>
               <CommandItem
                 onSelect={handleJump({
+                  to: '/settings/profile',
+                })}
+              >
+                <LuCircleUserRound className="mr-2 h-4 w-4" />
+                <span>{t('Profile')}</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={handleJump({
                   to: '/settings/apiKey',
                 })}
               >
                 <LuKeyRound className="mr-2 h-4 w-4" />
                 <span>{t('Api Key')}</span>
               </CommandItem>
-              <CommandItem
-                onSelect={handleJump({
-                  to: '/settings/usage',
-                })}
-              >
-                <LuSquareKanban className="mr-2 h-4 w-4" />
-                <span>{t('Usage')}</span>
-              </CommandItem>
+              {alphaMode && (
+                <CommandItem
+                  onSelect={handleJump({
+                    to: '/settings/usage',
+                  })}
+                >
+                  <LuSquareKanban className="mr-2 h-4 w-4" />
+                  <span>{t('Usage')}</span>
+                </CommandItem>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>
@@ -251,26 +268,36 @@ export const CommandPanelSearchGroup: React.FC<CommandPanelSearchGroupProps> =
     const handleJump = props.handleJump;
     const search = useCommandState((state) => state.search);
     const workspaceId = useCurrentWorkspaceId();
+    const alphaMode = useSettingsStore((state) => state.alphaMode);
     const { t } = useTranslation();
-    const { data: websites = [] } = trpc.website.all.useQuery({
-      workspaceId,
-    });
-    const { data: monitors = [] } = trpc.monitor.all.useQuery({
-      workspaceId,
-    });
-    const { data: telemetryList = [] } = trpc.telemetry.all.useQuery({
-      workspaceId,
-    });
-    const { data: pages = [] } = trpc.page.getAllPages.useQuery({
-      workspaceId,
-      type: 'status',
-    });
-    const { data: surveys = [] } = trpc.survey.all.useQuery({
-      workspaceId,
-    });
-    const { data: feedChannels = [] } = trpc.feed.channels.useQuery({
-      workspaceId,
-    });
+    const { data: websites = [] } = trpc.website.all.useQuery(
+      { workspaceId },
+      { enabled: Boolean(workspaceId) }
+    );
+    const { data: monitors = [] } = trpc.monitor.all.useQuery(
+      { workspaceId },
+      { enabled: Boolean(workspaceId) }
+    );
+    const { data: notifications = [] } = trpc.notification.all.useQuery(
+      { workspaceId },
+      { enabled: Boolean(workspaceId) }
+    );
+    const { data: pages = [] } = trpc.page.getAllPages.useQuery(
+      { workspaceId, type: 'status' },
+      { enabled: Boolean(workspaceId) }
+    );
+    const { data: feedChannels = [] } = trpc.feed.channels.useQuery(
+      { workspaceId },
+      { enabled: Boolean(workspaceId) }
+    );
+    const { data: telemetryList = [] } = trpc.telemetry.all.useQuery(
+      { workspaceId },
+      { enabled: Boolean(workspaceId && alphaMode) }
+    );
+    const { data: surveys = [] } = trpc.survey.all.useQuery(
+      { workspaceId },
+      { enabled: Boolean(workspaceId && alphaMode) }
+    );
 
     if (!search) {
       return null;
@@ -278,22 +305,6 @@ export const CommandPanelSearchGroup: React.FC<CommandPanelSearchGroupProps> =
 
     return (
       <CommandGroup heading={t('Search')}>
-        {websites.map((w) => (
-          <CommandItem
-            key={w.id}
-            value={w.id}
-            keywords={[w.name, w.id]}
-            onSelect={handleJump({
-              to: '/website/$websiteId',
-              params: {
-                websiteId: w.id,
-              },
-            })}
-          >
-            <LuFileChartPie className="mr-2 h-4 w-4" />
-            {w.name}
-          </CommandItem>
-        ))}
         {monitors.map((m) => (
           <CommandItem
             key={m.id}
@@ -310,20 +321,33 @@ export const CommandPanelSearchGroup: React.FC<CommandPanelSearchGroupProps> =
             {m.name}
           </CommandItem>
         ))}
-        {telemetryList.map((t) => (
+        {notifications.map((n) => (
           <CommandItem
-            key={t.id}
-            value={t.id}
-            keywords={[t.name, t.id]}
+            key={n.id}
+            value={n.id}
+            keywords={[n.name, n.type, n.id]}
             onSelect={handleJump({
-              to: '/telemetry/$telemetryId',
+              to: '/settings/notifications',
+            })}
+          >
+            <LuBell className="mr-2 h-4 w-4" />
+            {n.name}
+          </CommandItem>
+        ))}
+        {websites.map((w) => (
+          <CommandItem
+            key={w.id}
+            value={w.id}
+            keywords={[w.name, w.id]}
+            onSelect={handleJump({
+              to: '/website/$websiteId',
               params: {
-                telemetryId: t.id,
+                websiteId: w.id,
               },
             })}
           >
-            <LuWifi className="mr-2 h-4 w-4" />
-            {t.name}
+            <LuChartArea className="mr-2 h-4 w-4" />
+            {w.name}
           </CommandItem>
         ))}
         {pages.map((p) => (
@@ -342,22 +366,6 @@ export const CommandPanelSearchGroup: React.FC<CommandPanelSearchGroupProps> =
             {p.title}
           </CommandItem>
         ))}
-        {surveys.map((s) => (
-          <CommandItem
-            key={s.id}
-            value={s.id}
-            keywords={[s.name, s.id]}
-            onSelect={handleJump({
-              to: '/survey/$surveyId',
-              params: {
-                surveyId: s.id,
-              },
-            })}
-          >
-            <RiSurveyLine className="mr-2 h-4 w-4" />
-            {s.name}
-          </CommandItem>
-        ))}
         {feedChannels.map((channel) => (
           <CommandItem
             key={channel.id}
@@ -374,6 +382,40 @@ export const CommandPanelSearchGroup: React.FC<CommandPanelSearchGroupProps> =
             {channel.name}
           </CommandItem>
         ))}
+        {alphaMode &&
+          telemetryList.map((item) => (
+            <CommandItem
+              key={item.id}
+              value={item.id}
+              keywords={[item.name, item.id]}
+              onSelect={handleJump({
+                to: '/telemetry/$telemetryId',
+                params: {
+                  telemetryId: item.id,
+                },
+              })}
+            >
+              <LuWifi className="mr-2 h-4 w-4" />
+              {item.name}
+            </CommandItem>
+          ))}
+        {alphaMode &&
+          surveys.map((s) => (
+            <CommandItem
+              key={s.id}
+              value={s.id}
+              keywords={[s.name, s.id]}
+              onSelect={handleJump({
+                to: '/survey/$surveyId',
+                params: {
+                  surveyId: s.id,
+                },
+              })}
+            >
+              <RiSurveyLine className="mr-2 h-4 w-4" />
+              {s.name}
+            </CommandItem>
+          ))}
       </CommandGroup>
     );
   });

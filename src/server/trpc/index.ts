@@ -62,64 +62,34 @@ export const trpcOpenapiHttpHandler = createOpenApiExpressMiddleware({
   createContext,
 });
 
-const title = 'Tianji OpenAPI';
+const title = 'TFG Monitor OpenAPI';
 
 const description = `
-## Tianji - All-in-One Insight Hub
+## TFG Monitor — Hệ thống Giám sát & Phân tích Tin Funding Group
 
-**Tianji** is a comprehensive, **open-source** monitoring and analytics platform designed for independent developers and small teams. It combines multiple essential tools into one lightweight solution.
+**TFG Monitor** (https://monitor.tinfundinggroup.net) là nền tảng giám sát tập trung, đo lường độ trễ (uptime), thu thập telemetry máy chủ và phân tích lượt truy cập thời gian thực cho hệ sinh thái Tin Funding Group.
 
-> **Getting Started:** Visit our official website at [tianji.dev](https://tianji.dev/) for complete documentation, tutorials, and deployment guides.
+### Các Tính năng Chính
 
-### Core Features
+- **Phân tích Lượt truy cập Website** — Đo lường lượng truy cập không cần cookie bên thứ ba (bảo vệ quyền riêng tư người dùng).
+- **Giám sát Uptime & Độ trễ** — Theo dõi liên tục 24/7 tình trạng hoạt động và chứng chỉ SSL của các dịch vụ.
+- **Trạng thái Máy chủ (Server Status)** — Giám sát CPU, RAM, Disk, Network VPS theo thời gian thực qua Podman & Reporter.
+- **Trang Trạng thái Công khai (Status Pages)** — Hiển thị uptime và thông báo bảo trì cho khách hàng.
+- **Cảnh báo Đa kênh** — Tích hợp gửi thông báo qua Email, Telegram, Discord, Webhook khi phát sinh sự cố.
+- **AI Gateway & Proxy** — Quản lý token, chi phí và định tuyến yêu cầu AI tập trung.
 
-- **Website Analytics** - Track website visitors without cookies (GDPR/CCPA compliant)
-- **Uptime Monitor** - Monitor your services 24/7 with alerts
-- **Server Status** - Real-time server metrics and performance monitoring
-- **Docker Status** - Monitor Docker containers and services
-- **Status Page** - Public status pages for your services
-- **Telemetry** - Collect telemetry data from distributed systems
-- **Survey** - User feedback and satisfaction surveys
-- **Feeds** - Event streams and notification management
-- **Short Link** - URL shortener with analytics
-- **AI Gateway** - AI model proxy with cost tracking
+### Xác thực API (Authentication)
 
-### Why Tianji?
-
-- **Open Source** - Apache 2.0 License, free forever
-- **Privacy First** - GDPR & CCPA compliant, no cookie tracking
-- **All-in-One** - Multiple tools in one lightweight platform
-- **Self-Hosted** - Full control over your data
-- **Community Driven** - Active community and continuous improvements
-
-### Authentication
-
-The Tianji API uses **Bearer Token** authentication. Include your API key in the Authorization header:
+TFG Monitor API sử dụng xác thực **Bearer Token**. Đính kèm API key vào header HTTP Authorization:
 
 \`\`\`
 Authorization: Bearer <YOUR_API_KEY>
 \`\`\`
 
-**How to obtain an API key:**
-
-1. Log in to your Tianji instance
-2. Click on your avatar in the top right corner
-3. Navigate to **Settings → API Keys**
-4. Click the + button to create a new API key
-5. Name your key and save it securely
-
-For detailed authentication instructions and code examples, see the [Authentication Documentation](https://tianji.dev/docs/api/authentication).
-
-### Resources
-
-- **Website:** [tianji.dev](https://tianji.dev/)
-- **GitHub:** [github.com/msgbyte/tianji](https://github.com/msgbyte/tianji)
-- **Community:** [Join our Discord](https://discord.gg/8Vv47wAEej)
-- **Cloud:** [Try Tianji Cloud](https://tianji.dev/)
-
----
-
-**Note:** This OpenAPI documentation provides programmatic access to all Tianji features. For detailed usage instructions, examples, and best practices, please visit our [official website](https://tianji.dev/).
+**Cách tạo API key:**
+1. Đăng nhập vào trang quản trị TFG Monitor (\`https://monitor.tinfundinggroup.net\`)
+2. Điều hướng tới **Settings → API Keys**
+3. Tạo API key mới với phân quyền phù hợp và lưu trữ an toàn.
 `.trim();
 
 export const trpcOpenapiDocument = generateOpenApiDocument(appRouter, {

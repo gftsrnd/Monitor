@@ -22,7 +22,7 @@ export const Route = createFileRoute('/login')({
   beforeLoad: ({ context }) => {
     if (context.userInfo) {
       redirect({
-        to: '/website',
+        to: '/monitor',
       });
     }
   },
@@ -167,11 +167,13 @@ function LoginComponent() {
       {theme === 'dark' && <DotPatternBackground />}
 
       <div className="w-80 -translate-y-1/4">
-        <div className="text-center">
-          <img className="m-auto h-24 w-24" src="/icon.svg" />
+        <div className="mb-4 text-center">
+          <div className="inline-flex items-center justify-center rounded-2xl p-2.5 bg-gradient-to-b from-amber-500/10 to-amber-500/5 ring-1 ring-amber-500/25 shadow-lg shadow-amber-500/10 backdrop-blur-sm">
+            <img className="h-20 w-20 drop-shadow-md" src="/icon.png" alt="TFG Monitor" />
+          </div>
         </div>
-        <Typography.Title className="text-center" level={2}>
-          Tianji
+        <Typography.Title className="text-center !mb-6 font-bold tracking-tight" level={2}>
+          TFG Monitor
         </Typography.Title>
 
         {mainAuthProvider}

@@ -100,3 +100,47 @@ describe('AUDIT_LOG_RETENTION_DAYS', () => {
     }
   );
 });
+
+describe('HOST', () => {
+  test('defaults to 0.0.0.0', async () => {
+    vi.stubEnv('HOST', '');
+    vi.resetModules();
+
+    const { env } = await import('./env.js');
+
+    expect(env.host).toBe('0.0.0.0');
+  });
+
+  test('accepts custom host', async () => {
+    vi.stubEnv('HOST', '127.0.0.1');
+    vi.resetModules();
+
+    const { env } = await import('./env.js');
+
+    expect(env.host).toBe('127.0.0.1');
+  });
+});
+
+describe('JWT_ISSUER and JWT_AUDIENCE', () => {
+  test('defaults to TFG Monitor domains', async () => {
+    vi.stubEnv('JWT_ISSUER', '');
+    vi.stubEnv('JWT_AUDIENCE', '');
+    vi.resetModules();
+
+    const { env } = await import('./env.js');
+
+    expect(env.jwtIssuer).toBe('monitor.tinfundinggroup.net');
+    expect(env.jwtAudience).toBe('tinfundinggroup.net');
+  });
+
+  test('accepts custom JWT issuer and audience', async () => {
+    vi.stubEnv('JWT_ISSUER', 'custom.issuer.com');
+    vi.stubEnv('JWT_AUDIENCE', 'custom.audience.com');
+    vi.resetModules();
+
+    const { env } = await import('./env.js');
+
+    expect(env.jwtIssuer).toBe('custom.issuer.com');
+    expect(env.jwtAudience).toBe('custom.audience.com');
+  });
+});

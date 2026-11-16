@@ -2060,8 +2060,8 @@ describe('AI Gateway runtime metadata helpers', () => {
     });
 
     expect(buildOpenRouterHeaders({ headers: {} } as any)).toEqual({
-      'HTTP-Referer': 'https://tianji.dev/',
-      'X-Title': 'Tianji',
+      'HTTP-Referer': 'https://monitor.tinfundinggroup.net/',
+      'X-Title': 'TFG Monitor',
     });
   });
 

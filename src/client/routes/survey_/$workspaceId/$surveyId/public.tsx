@@ -194,7 +194,7 @@ function PageComponent() {
           </CardContent>
           <CardFooter className="bg-muted/20 border-t py-4">
             <p className="text-muted-foreground w-full text-center text-xs">
-              {t('Powered by')} <span className="font-semibold">Tianji</span>
+              {t('Powered by')} <span className="font-semibold">TFG Monitor</span>
             </p>
           </CardFooter>
         </Card>
@@ -335,7 +335,7 @@ function PageComponent() {
 
         <CardFooter className="bg-muted/20 border-t py-4">
           <p className="text-muted-foreground w-full text-center text-xs">
-            {t('Powered by')} <span className="font-semibold">Tianji</span>
+            {t('Powered by')} <span className="font-semibold">TFG Monitor</span>
           </p>
         </CardFooter>
       </Card>

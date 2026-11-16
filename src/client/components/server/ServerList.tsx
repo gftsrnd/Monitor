@@ -59,7 +59,7 @@ export const ServerList: React.FC<ServerListProps> = React.memo((props) => {
             ) : (
               <Tooltip>
                 <TooltipTrigger>
-                  <Badge status="error" text="offline" />
+                  <Badge status="error" text={t('Offline')} />
                 </TooltipTrigger>
                 <TooltipContent>
                   {t('Last online: {{time}}', {

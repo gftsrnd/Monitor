@@ -41,7 +41,7 @@ import { authRateLimit } from './middleware/authRateLimit.js';
 
 const app = express();
 
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 app.use((_req, res, next) => {
   res.locals.requestStartedAt = performance.now();
   next();
@@ -101,7 +101,9 @@ app.use('/trpc', trpcExpressMiddleware);
 
 if (env.customTrackerScriptName) {
   app.get(`/${env.customTrackerScriptName}`, (req, res) =>
-    res.sendFile(path.resolve(process.cwd(), './public/tracker.js'))
+    res.sendFile(path.resolve(process.cwd(), './public/tracker.js'), {
+      maxAge: '1d',
+    })
   );
 }
 
@@ -116,7 +118,7 @@ if (env.allowOpenapi) {
     res.send(`
       <html>
         <head>
-          <title>Tianji OpenAPI</title>
+          <title>TFG Monitor OpenAPI</title>
           <script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
           <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
         </head>
@@ -125,7 +127,7 @@ if (env.allowOpenapi) {
             apiDescriptionUrl="/open/_document"
             router="hash"
             layout="responsive"
-            logo="https://tianji.dev/img/logo.svg"
+            logo="/icon.png"
           />
           <style>
             a[href^='https://stoplight.io'] {

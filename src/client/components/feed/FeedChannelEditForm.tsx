@@ -15,7 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { trpc } from '@/api/trpc';
+import { useCurrentWorkspaceId } from '@/store/user';
 import {
   Select,
   SelectContent,
@@ -50,16 +52,43 @@ export const FeedChannelEditForm: React.FC<FeedChannelEditFormProps> =
   React.memo((props) => {
     const { t } = useTranslation();
 
+    const isEdit = Boolean(props.defaultValues);
+    const workspaceId = useCurrentWorkspaceId();
+    const autoBoundRef = useRef(false);
+
+    const { data: notifications = [] } = trpc.notification.all.useQuery(
+      { workspaceId: workspaceId! },
+      { enabled: Boolean(workspaceId && !isEdit) }
+    );
+
     const form = useForm<FeedChannelEditFormValues>({
       resolver: zodResolver(addFormSchema),
       defaultValues: props.defaultValues ?? {
         name: 'New Channel',
         webhookSignature: '',
         notificationIds: [],
-        notifyFrequency: 'none',
+        notifyFrequency: 'event',
         publicShareId: null,
       },
     });
+
+    useEffect(() => {
+      if (
+        !isEdit &&
+        !autoBoundRef.current &&
+        notifications.length > 0 &&
+        !form.getFieldState('notificationIds').isDirty
+      ) {
+        const current = form.getValues('notificationIds');
+        if (!Array.isArray(current) || current.length === 0) {
+          form.setValue(
+            'notificationIds',
+            notifications.map((n) => n.id)
+          );
+          autoBoundRef.current = true;
+        }
+      }
+    }, [isEdit, notifications, form]);
 
     const publicShareId = form.watch('publicShareId');
 

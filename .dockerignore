@@ -1,8 +1,13 @@
+.git
+.github
+.system_generated
 apps
-example
+deploy
 docker
+example
 node_modules
 packages/*
 !packages/client-sdk
 !packages/client-sdk/**
 website
+*.md

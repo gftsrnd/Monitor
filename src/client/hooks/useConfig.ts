@@ -28,6 +28,9 @@ const defaultGlobalConfig: AppRouterOutput['global']['config'] = {
 let _config = defaultGlobalConfig;
 
 const callAnonymousTelemetry = once(() => {
+  if (!anonymousTelemetryUrl) {
+    return;
+  }
   fetch(anonymousTelemetryUrl);
 });
 

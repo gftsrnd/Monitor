@@ -13,6 +13,9 @@ export async function invalidateStaticPageCache(slug: string): Promise<void> {
   await cache.delete(CACHE_KEY_PREFIX + slug);
 }
 
+const SANDBOX_CSP =
+  "default-src 'none'; style-src 'unsafe-inline' https:; img-src data: https:; font-src data: https:; sandbox";
+
 /** Serve static page HTML by slug. Returns true if sent, false if not found. */
 export async function serveStaticPageBySlug(
   slug: string,
@@ -22,6 +25,8 @@ export async function serveStaticPageBySlug(
   const cached = await cache.get(CACHE_KEY_PREFIX + slug);
   if (cached != null) {
     res.set('Cache-Control', CACHE_CONTROL);
+    res.set('Content-Security-Policy', SANDBOX_CSP);
+    res.set('X-Content-Type-Options', 'nosniff');
     res.type('text/html').send(String(cached));
     return true;
   }
@@ -32,6 +37,8 @@ export async function serveStaticPageBySlug(
   const html = (page.payload as { html?: string })?.html ?? '';
   await cache.set(CACHE_KEY_PREFIX + slug, html, CACHE_TTL_MS);
   res.set('Cache-Control', CACHE_CONTROL);
+  res.set('Content-Security-Policy', SANDBOX_CSP);
+  res.set('X-Content-Type-Options', 'nosniff');
   res.type('text/html').send(html);
   return true;
 }

@@ -1386,8 +1386,8 @@ describe('AI Router gateway provider dispatch', () => {
       },
     });
     expect(chatConfig?.options.header?.(req)).toEqual({
-      'HTTP-Referer': 'https://tianji.dev/',
-      'X-Title': 'Tianji',
+      'HTTP-Referer': 'https://monitor.tinfundinggroup.net/',
+      'X-Title': 'TFG Monitor',
     });
     expect(chatConfig?.options.header?.(lowercaseHeaderReq)).toEqual({
       'HTTP-Referer': 'https://example.com/app',
@@ -1402,8 +1402,8 @@ describe('AI Router gateway provider dispatch', () => {
       },
     });
     expect(messagesConfig?.options.header?.(req)).toEqual({
-      'HTTP-Referer': 'https://tianji.dev/',
-      'X-Title': 'Tianji',
+      'HTTP-Referer': 'https://monitor.tinfundinggroup.net/',
+      'X-Title': 'TFG Monitor',
     });
     expect(messagesConfig?.options.header?.(lowercaseHeaderReq)).toEqual({
       'HTTP-Referer': 'https://example.com/app',

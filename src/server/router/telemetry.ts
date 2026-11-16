@@ -13,46 +13,15 @@ const blankGifBuffer = Buffer.from(
 );
 
 /**
- * @deprecated please use route with telemetry id
+ * @deprecated Legacy unkeyed workspace telemetry endpoints disabled to prevent predictable workspaceId spam.
  */
-telemetryRouter.get(
-  '/:workspaceId/blank.gif',
-  validate(
-    query('name').optional().isString(),
-    query('url').optional().isURL()
-  ),
-  async (req, res) => {
-    recordTelemetryEvent(req);
+telemetryRouter.get('/:workspaceId/blank.gif', (_req, res) => {
+  res.header('Content-Type', 'image/gif').status(410).send(blankGifBuffer);
+});
 
-    res.header('Content-Type', 'image/gif').send(blankGifBuffer);
-  }
-);
-
-/**
- * @deprecated please use route with telemetry id
- */
-telemetryRouter.get(
-  '/:workspaceId/badge.svg',
-  validate(
-    query('name').optional().isString(),
-    query('url').optional().isURL()
-  ),
-  async (req, res) => {
-    const title = req.query.title || 'visitor';
-    const start = req.query.start ? Number(req.query.start) : 0;
-
-    recordTelemetryEvent(req);
-    const num = await sumTelemetryEvent(req);
-
-    const svg = makeBadge({
-      label: String(title),
-      message: numify(num + start),
-      color: 'green',
-    });
-
-    res.header('Content-Type', 'image/svg+xml').send(svg);
-  }
-);
+telemetryRouter.get('/:workspaceId/badge.svg', (_req, res) => {
+  res.status(410).send('Deprecated endpoint disabled');
+});
 
 telemetryRouter.get(
   '/:workspaceId/:telemetryId.gif',

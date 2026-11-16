@@ -45,7 +45,7 @@ export function generateSMTPHTML(
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>Tianji Email Notification</title>
+  <title>TFG Monitor Notification</title>
 </head>
 <body style="margin: 0; padding: 0; -webkit-text-size-adjust: none; text-size-adjust: none; width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; font-size: 16px; line-height: 1.6; color: #1a1a1a; background-color: #f3f4f6;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 40px 0;">
@@ -57,17 +57,17 @@ export function generateSMTPHTML(
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
                   <td align="center">
-                    <img src="https://tianji.dev/img/logo@128.png" width="64" height="64" alt="Tianji" style="display: block; border: 0; height: auto; line-height: 100%; max-width: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border-radius: 6px; margin-top: 16px;" />
+                    <img src="${env.publicUrl || 'https://monitor.tinfundinggroup.net'}/icon.png" width="64" height="64" alt="TFG Monitor" style="display: block; border: 0; height: auto; line-height: 100%; max-width: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border-radius: 6px; margin-top: 16px;" />
                   </td>
                 </tr>
                 <tr>
                   <td align="center">
-                    <h1 style="color: #0f172a; font-size: 28px; font-weight: 600; letter-spacing: -0.5px; margin: 0; padding: 0;">Tianji</h1>
+                    <h1 style="color: #0f172a; font-size: 28px; font-weight: 600; letter-spacing: -0.5px; margin: 0; padding: 0;">TFG Monitor</h1>
                   </td>
                 </tr>
                 <tr>
                   <td align="center">
-                    <p style="color: #64748b; font-size: 16px; margin-top: 4px; margin: 0; padding: 0;">Insight into everything</p>
+                    <p style="color: #64748b; font-size: 16px; margin-top: 4px; margin: 0; padding: 0;">Hệ thống Giám sát & Phân tích — Tin Funding Group</p>
                   </td>
                 </tr>
               </table>
@@ -120,8 +120,8 @@ export function generateSMTPHTML(
                 <tr>
                   <td>
                     <p style="margin: 0; padding: 0; color: #475569; font-size: 15px;">
-                      We hope you enjoy using the service,<br/>
-                      Tianji Team
+                      Trân trọng,<br/>
+                      TFG Monitor Team
                     </p>
                   </td>
                 </tr>
@@ -135,7 +135,7 @@ export function generateSMTPHTML(
           <tr>
             <td align="center" style="padding-top: 12px;">
               <p style="font-size: 13px; color: #94a3b8; margin: 0; padding: 0;">
-                Message sent from ${env.publicUrl}
+                Thông báo được gửi từ <a href="${env.publicUrl}" style="color: #64748b; text-decoration: none;">${env.publicUrl}</a>
               </p>
             </td>
           </tr>`
@@ -143,28 +143,12 @@ export function generateSMTPHTML(
           }
 
           <tr>
-            <td style="padding: 32px 0;">
+            <td style="padding: 24px 0;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td align="center" style="padding-bottom: 16px;">
-                    <a href="https://github.com/msgbyte/tianji" target="_blank" style="display: inline-block; margin: 0 6px;">
-                      <img src="https://tianji.dev/img/social/github.png" width="24" height="24" alt="GitHub" style="border: 0; height: auto; line-height: 100%; max-width: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; color: #0f172a;" />
-                    </a>
-                    <a href="https://twitter.com/moonrailgun" target="_blank" style="display: inline-block; margin: 0 6px;">
-                      <img src="https://tianji.dev/img/social/x.png" width="24" height="24" alt="Twitter" style="border: 0; height: auto; line-height: 100%; max-width: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; color: #0f172a;" />
-                    </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td align="center" style="padding-bottom: 16px;">
-                    <a href="https://github.com/msgbyte/tianji" style="display: inline-block; font-size: 14px; color: #0f172a; text-decoration: none; margin: 0 8px;" target="_blank">GitHub</a>
-                    <a href="https://tianji.dev/docs/intro" style="display: inline-block; font-size: 14px; color: #0f172a; text-decoration: none; margin: 0 8px;" target="_blank">Docs</a>
-                  </td>
-                </tr>
-                <tr>
                   <td align="center">
-                    <p style="font-size: 14px; color: #64748b; margin: 0; padding: 0;">
-                      © ${dayjs().year()} Tianji. All rights reserved.
+                    <p style="font-size: 13px; color: #64748b; margin: 0; padding: 0;">
+                      © ${dayjs().year()} TFG Monitor — Tin Funding Group. All rights reserved.
                     </p>
                   </td>
                 </tr>
